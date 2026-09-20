@@ -8,6 +8,16 @@ export async function GET(request: NextRequest) {
   const requestedStatus = request.nextUrl.searchParams.get("status");
   const status = EVENT_STATUSES.find((value) => value === requestedStatus);
 
+  // Filter yang tidak dikenal ditolak, bukan diabaikan: klien yang salah
+  // mengetik status akan mengira filternya bekerja.
+  if (requestedStatus !== null && !status) {
+    return errorResponse(
+      "Status must be one of DRAFT, PUBLISHED, CANCELLED, or COMPLETED",
+      400,
+      "status",
+    );
+  }
+
   try {
     const events = await prisma.event.findMany({
       where: status ? { status } : undefined,
