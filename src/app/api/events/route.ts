@@ -9,8 +9,9 @@ export async function GET(request: NextRequest) {
   const status = EVENT_STATUSES.find((value) => value === requestedStatus);
 
   // Filter yang tidak dikenal ditolak, bukan diabaikan: klien yang salah
-  // mengetik status akan mengira filternya bekerja.
-  if (requestedStatus !== null && !status) {
+  // mengetik status akan mengira filternya bekerja. String kosong berarti
+  // "tanpa filter", karena itu yang dikirim dropdown dengan opsi "All".
+  if (requestedStatus !== null && requestedStatus !== "" && !status) {
     return errorResponse(
       "Status must be one of DRAFT, PUBLISHED, CANCELLED, or COMPLETED",
       400,
