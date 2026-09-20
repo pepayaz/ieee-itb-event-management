@@ -10,6 +10,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # Nilai dummy, berlaku untuk seluruh step. CI tidak pernah menyentuh
+    # database sungguhan, tetapi `prisma generate` membaca `prisma.config.ts`
+    # yang memanggil env("DIRECT_URL") saat dimuat, sehingga variabel ini
+    # harus sudah ada sebelum step build.
+    env:
+      DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+      DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
+      JWT_SECRET: "dummy-secret-for-ci-build-only-not-real"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,9 +43,3 @@ jobs:
 
       - name: Build application
         run: npm run build
-        env:
-          # Nilai dummy: build hanya perlu variabel ini terdefinisi,
-          # tidak benar-benar terhubung ke database.
-          DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
-          DIRECT_URL: "postgresql://user:pass@localhost:5432/db"
-          JWT_SECRET: "dummy-secret-for-ci-build-only-not-real"
