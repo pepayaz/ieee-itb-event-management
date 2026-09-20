@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { DeleteEventButton } from "@/components/DeleteEventButton";
 import { LogoutButton } from "@/components/LogoutButton";
 import { EmptyState, ErrorState } from "@/components/StateViews";
 import { formatEventDate } from "@/lib/format";
@@ -54,12 +55,18 @@ export default async function AdminDashboardPage() {
                   <td className="px-3 py-2 text-gray-700">{event.location}</td>
                   <td className="px-3 py-2 text-gray-700">{event.status}</td>
                   <td className="px-3 py-2">
-                    <Link
-                      href={`/admin/events/${event.id}/edit`}
-                      className="text-gray-700 underline hover:text-gray-900"
-                    >
-                      Edit
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/events/${event.id}/edit`}
+                        className="text-gray-700 underline hover:text-gray-900"
+                      >
+                        Edit
+                      </Link>
+                      <DeleteEventButton
+                        eventId={event.id}
+                        eventTitle={event.title}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
