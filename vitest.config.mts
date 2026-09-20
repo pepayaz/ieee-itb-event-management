@@ -5,6 +5,11 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // Secret khusus test: suite tidak boleh bergantung pada isi .env mesin
+    // yang menjalankannya, termasuk CI.
+    env: {
+      JWT_SECRET: "test-secret-value-that-is-long-enough-for-hs256",
+    },
   },
   resolve: {
     // Vitest tidak membaca "paths" dari tsconfig, jadi alias ditulis ulang.
