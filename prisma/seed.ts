@@ -1,10 +1,7 @@
 import "dotenv/config";
 
-import bcrypt from "bcryptjs";
-
+import { hashPassword } from "../src/lib/password";
 import { prisma } from "../src/lib/prisma";
-
-const SALT_ROUNDS = 10;
 
 async function main() {
   const username = process.env.ADMIN_USERNAME;
@@ -16,7 +13,7 @@ async function main() {
     );
   }
 
-  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const passwordHash = await hashPassword(password);
 
   // Upsert, bukan create, supaya seed aman dijalankan berulang kali dan
   // sekaligus berfungsi untuk mengganti password admin.
