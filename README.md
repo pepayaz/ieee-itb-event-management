@@ -31,16 +31,22 @@ Developer 2026/2027.
 ## Features
 
 Every item below was verified end to end before release. The verification
-run covered eighteen scenarios, including failure paths, and was repeated at
-a 375 pixel viewport.
+includes the original eighteen regression scenarios, the additional search,
+filter, pagination, upload, rate-limit and security scenarios, and a repeat
+of the main flow at a 375 pixel viewport.
 
 **Public site**
 
+- [x] Public homepage at `/`; visitors browse events without an account
 - [x] Event list page showing only `PUBLISHED` events, ordered by date
 - [x] Event detail page
 - [x] Draft events are unreachable from the public side, including by direct
       URL — they return a real HTTP 404
 - [x] Loading, empty and error states, each visible in the running app
+- [x] Case-insensitive search across event titles and descriptions
+- [x] Upcoming and past event filters with shareable URL parameters
+- [x] Pagination that preserves active search and filters
+- [x] Optional event images with a consistent fallback when no image exists
 - [x] Readable at 375 and 1440 pixels
 
 **Admin**
@@ -50,6 +56,8 @@ a 375 pixel viewport.
 - [x] Create event
 - [x] Edit event
 - [x] Delete event behind a confirmation dialog that names the event
+- [x] Upload JPEG, PNG or WebP event images up to 2 MB
+- [x] Search, timeframe and status filters with pagination
 - [x] Logout
 - [x] Client-side validation with per-field messages, sharing one schema
       with the server
@@ -63,6 +71,12 @@ a 375 pixel viewport.
 - [x] Server-side validation on every write, with a single error response
       shape across all endpoints
 - [x] All event data persisted in PostgreSQL
+- [x] Login rate limiting and equal-cost password verification for unknown users
+- [x] Upload validation using file signatures rather than names or MIME claims
+- [x] Security headers including CSP, frame protection and MIME sniffing protection
+
+The threat review and implementation evidence are documented in
+[docs/SECURITY.md](./docs/SECURITY.md).
 
 ---
 
@@ -92,6 +106,7 @@ a 375 pixel viewport.
                           │  /api/events        (Node)    │────────┘
                           │  /api/events/[id]   (Node)    │  Prisma
                           │  /api/auth/*        (Node)    │  (read + write)
+                          │  /api/uploads       (Node)    │──▶ public/uploads
                           └───────────────────────────────┘
 ```
 
@@ -122,15 +137,20 @@ src/
     admin/               login, dashboard, create and edit pages
     api/events/          event collection and single-event endpoints
     api/auth/            login, logout, session endpoints
-  components/            EventCard, EventForm, DeleteEventButton,
-                         LogoutButton, StateViews
+    api/uploads/         validated local image upload endpoint
+  components/            event UI, filters, forms, reusable primitives,
+                         public site chrome and state views
   lib/
     prisma.ts            PrismaClient singleton with the pg adapter
     validation.ts        Zod schemas shared by client and server
     auth.ts              JWT signing and verification (Edge-safe)
     password.ts          bcrypt hashing (Node only)
     api.ts               shared error response helpers
+    api-client.ts        typed browser fetch and shared error handling
+    events.ts            event query and mutation service layer
     format.ts            date formatting and time zone conversion
+    rate-limit.ts        login sliding-window limiter
+    uploads.ts           image signature and size rules
   middleware.ts          route protection
 tests/                   Vitest suites
 docs/                    design notes and decision log
@@ -147,6 +167,7 @@ passwordHash  String          description  String
 createdAt     DateTime        date         DateTime
                               location     String
                               status       EventStatus  default DRAFT
+                              imageUrl     String?      local public path
                               createdAt    DateTime
                               updatedAt    DateTime
                               index (status, date)
@@ -216,6 +237,12 @@ generates its client into `node_modules`, which is not committed, so without
 it the app fails at startup with
 `Cannot find module '.prisma/client/default'`.
 
+Uploaded images are stored in `public/uploads`, whose tracked `.gitkeep`
+creates the directory in a fresh clone. The application process must have
+write permission to this directory. This local filesystem design is suitable
+for the documented single-instance setup but not for ephemeral or horizontally
+scaled hosting.
+
 ### Other commands
 
 ```bash
@@ -258,13 +285,13 @@ need to be created by hand.
 
 ```bash
 npx prisma migrate deploy   # apply migrations to the database in .env
-npx prisma db seed          # create the admin account
+npx prisma db seed          # create/update the admin and eight demo events
 ```
 
-The seed script is idempotent: it upserts on `username`, so running it twice
-produces one account, not two. Running it again after changing
-`ADMIN_PASSWORD` updates the stored hash, which is also how the admin
-password is changed.
+The seed script is idempotent: it upserts the admin by `username` and the eight
+demo events by stable IDs, so running it twice does not create duplicates.
+Running it again after changing `ADMIN_PASSWORD` updates the stored hash,
+which is also how the admin password is changed.
 
 To inspect the data directly:
 
@@ -307,7 +334,7 @@ error handler:
 
 | Method | Endpoint | Auth | Behaviour |
 |---|---|---|---|
-| `GET` | `/api/events` | no | All events, ordered by date ascending. Optional `?status=` filter; an unknown value returns `400`, an empty value means no filter |
+| `GET` | `/api/events` | no | Events ordered by date ascending. Supports `search`, `timeframe`, `status`, `page`, and `pageSize`; explicit pagination returns events plus page metadata |
 | `POST` | `/api/events` | yes | Creates an event. `201` with the created record |
 | `GET` | `/api/events/[id]` | no | One event, or `404` |
 | `PUT` | `/api/events/[id]` | yes | Partial update. `200`, or `404` if the record is gone |
@@ -315,6 +342,7 @@ error handler:
 | `POST` | `/api/auth/login` | no | Sets the session cookie, returns `{ username }`, or `401` |
 | `POST` | `/api/auth/logout` | no | Clears the session cookie |
 | `GET` | `/api/auth/me` | yes | Returns `{ username }` for the current session, or `401` |
+| `POST` | `/api/uploads` | yes | Stores a validated JPEG, PNG or WebP up to 2 MB and returns `{ url }` with status `201` |
 
 Requests without a valid session cookie receive `401` from the middleware
 before reaching the handler. `GET` requests are always allowed, which is what
@@ -337,15 +365,14 @@ time everywhere, so the same event reads identically on any machine.
 npm run test -- --run
 ```
 
-29 tests across three suites cover the validation schemas, password hashing
-and session tokens, and the time zone conversion in both directions,
-including a round trip and a case that falls on a different day in UTC.
+65 tests across six suites cover validation, password hashing, session tokens,
+rate-limit behaviour, event query construction and pagination, upload file
+signature detection, and time-zone conversion in both directions.
 
-Beyond the automated tests, the application was walked through eighteen
-manual scenarios — the full create-to-delete flow, then the failure paths,
-then the whole flow again at a 375 pixel viewport — and the setup
-instructions in this README were verified by cloning the repository into an
-empty directory and following them from scratch.
+Beyond the automated tests, the application was walked through the original
+eighteen scenarios and the Phase 2 scenarios for search, filters, pagination,
+rate limiting, uploads and security headers. The setup instructions were also
+verified from a clean clone.
 
 Continuous integration runs lint, tests and a production build on every push
 to `main`.
@@ -354,22 +381,7 @@ to `main`.
 
 ## Known issues and limitations
 
-**1. Login response times can reveal whether a username exists**
-
-The login endpoint returns the same message for an unknown username and a
-wrong password, but not in the same amount of time: when no account matches,
-bcrypt never runs, so the response comes back sooner. Someone measuring that
-difference could work out which usernames are registered — the very thing
-the identical message is meant to hide.
-
-*Not addressed because* it falls outside the required scope, and the
-remaining time went to functionality that is being assessed.
-
-*How to fix:* keep a dummy bcrypt hash as a constant and compare against it
-when no account is found, so both paths spend comparable time before
-returning `401`.
-
-**2. The `middleware` file convention is deprecated in Next.js 16**
+**1. The `middleware` file convention is deprecated in Next.js 16**
 
 The build prints a warning: the `middleware` convention has been superseded
 by `proxy`. Route protection works correctly, but the convention will be
@@ -382,19 +394,7 @@ every authorisation path for no functional gain.
 re-test the protected routes — mutating requests to `/api/events`, the
 `/admin/*` redirects, and logout.
 
-**3. `Date.parse` accepts loosely formatted dates**
-
-Date validation accepts any string `Date.parse` understands, and that
-includes values like `"42"`, which it reads as the year 2042.
-
-*Not addressed because* the admin form uses a `datetime-local` input that
-always submits ISO format, so the gap is unreachable through the UI. It only
-affects clients calling the API directly.
-
-*How to fix:* check the value against an ISO 8601 pattern in
-`src/lib/validation.ts` before the `Date.parse` refinement.
-
-**4. `npm audit` reports four high-severity advisories**
+**2. `npm audit` reports four high-severity advisories**
 
 The advisories are in `mysql2` and `deepmerge-ts`, which arrive as
 transitive dependencies of the Prisma CLI. All of them sit under
@@ -408,13 +408,29 @@ setup.
 *How to fix:* wait for a Prisma release that updates those transitive
 dependencies, then re-run `npm audit`.
 
+**3. Uploaded images use local filesystem storage**
+
+Files are written to `public/uploads`. This works locally and on a persistent
+single server, but files can disappear on an ephemeral deployment and are not
+shared between multiple instances.
+
+*How to fix:* replace the filesystem write with object storage such as S3 or
+an equivalent service, then store the returned object URL.
+
+**4. Replaced and deleted event images are not garbage-collected**
+
+Changing an event image or deleting its event leaves the old file in
+`public/uploads`. This avoids deleting a file that may still be referenced,
+but unused files can accumulate.
+
+*How to fix:* track image ownership and remove the previous object only after
+the database update or deletion succeeds.
+
 ### Scope limitations
 
 The following were deliberately left out. They are not part of the required
 scope:
 
-- Search, filtering by upcoming or past, and pagination
-- Image uploads
 - Multiple admin accounts, self-registration and password reset — the schema
   supports more than one admin row, but nothing in the UI creates one
 - Deployment to a hosting provider; the project runs locally as documented
@@ -423,8 +439,8 @@ scope:
 
 ## AI tools usage
 
-Claude (Anthropic) was used as a coding assistant throughout this project,
-in an agentic setup with access to the repository, a terminal and a browser.
+Claude (Anthropic) and Codex (OpenAI) were used as coding assistants during
+the project, with access to the repository, terminal and browser.
 
 **Where it was applied**
 
@@ -442,14 +458,15 @@ in an agentic setup with access to the repository, a terminal and a browser.
 **How it was directed**
 
 Work proceeded in reviewed increments. Each stage was specified before any
-code was written, the assistant explained its plan and then its decisions,
-and every change was inspected and committed by the developer — the
-assistant never committed or pushed. Several of its proposals were rejected
-after review; one example is a `postinstall` hook to run `prisma generate`,
+code was written, the assistants explained plans and decisions, and changes
+were inspected by the developer. Commits and pushes were performed only when
+the developer explicitly requested them, using the developer's configured Git
+identity and no attribution trailers. Several proposals were rejected after
+review; one example is a `postinstall` hook to run `prisma generate`,
 which would have made `npm install` fail on a clean clone because the Prisma
 config reads an environment variable that does not exist yet at that point.
 
-Verification was treated as the assistant's main contribution rather than
+Verification was treated as the assistants' main contribution rather than
 code generation. Three defects that type checking and tests did not catch
 were found this way: the public list page being pre-rendered at build time
 so new events would never appear; a `loading.tsx` file causing `notFound()`

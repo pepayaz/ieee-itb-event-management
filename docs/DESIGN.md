@@ -33,6 +33,7 @@ code, not the plan; the reasoning behind those divergences is in
                           │  /api/events        (Node)    │────────┘
                           │  /api/events/[id]   (Node)    │  Prisma
                           │  /api/auth/*        (Node)    │  (read + write)
+                          │  /api/uploads       (Node)    │──▶ public/uploads
                           └───────────────────────────────┘
 ```
 
@@ -55,6 +56,8 @@ modules. This constrains what it may import:
 | `src/lib/prisma.ts` | `PrismaClient` with `PrismaPg` | Node only | Server Components, API routes, seed |
 | `src/lib/api.ts` | error response helpers | Edge-safe | middleware, all API routes |
 | `src/lib/validation.ts` | Zod schemas | both | form component, API routes |
+| `src/lib/events.ts` | filters, pagination and event persistence | Node only | Server Components, event API routes |
+| `src/lib/uploads.ts` | image signature and size rules | Node only | upload route, tests |
 
 Splitting signing from hashing is what keeps the middleware buildable: a
 single module holding both would pull `bcryptjs` into the Edge bundle and
@@ -89,6 +92,7 @@ model Event {
   date        DateTime
   location    String
   status      EventStatus @default(DRAFT)
+  imageUrl    String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -105,6 +109,8 @@ Notes on the choices encoded here:
   rather than a convention.
 - **Composite index on `(status, date)`** matches the public list query,
   which filters on `status = PUBLISHED` and sorts by `date`.
+- **Nullable `imageUrl`** keeps images optional. Values point to files under
+  `/uploads`; the database stores no binary data.
 - **No relation between `Admin` and `Event`.** Nothing in the requirements
   attributes an event to its author, and inventing the relation would add a
   column no screen displays.
@@ -139,14 +145,23 @@ disclose table structure and connection details.
 
 | Query | Effect |
 |---|---|
-| none | every event, `date` ascending |
+| none | every event, `date` ascending; legacy array response |
 | `?status=PUBLISHED` | filtered to that status |
 | `?status=` (empty) | treated as no filter |
 | `?status=ANYTHING_ELSE` | `400` with `field: "status"` |
+| `?search=robotics` | case-insensitive title or description match |
+| `?timeframe=upcoming` | events at or after the current time |
+| `?timeframe=past` | events before the current time |
+| `?page=2&pageSize=15` | paginated response with `total`, `page`, `pageSize`, and `totalPages` |
 
 ```
 200 → [ { id, title, description, date, location, status, createdAt, updatedAt } ]
 ```
+
+When `page` or `pageSize` is present, the response is
+`{ events, total, page, pageSize, totalPages }`. The service layer clamps a
+page beyond the upper bound to the final valid page and a page below one to
+page one.
 
 **`POST /api/events`** — admin only
 
@@ -223,6 +238,26 @@ instead of removing the first.
 **`GET /api/auth/me`** — returns `{ username }` for a valid session, or
 `401`. Used to check a session without exposing the token itself.
 
+Failed logins are limited to five attempts per client IP in a sliding
+15-minute window. An unknown username is still compared against a fixed
+bcrypt hash so it costs approximately the same as a wrong password. A
+successful login clears that client's counter.
+
+### Uploads
+
+**`POST /api/uploads`** — admin only, multipart field `file`.
+
+The route accepts JPEG, PNG and WebP up to 2 MB. It rejects unsupported
+claimed MIME types early, then makes the final decision from magic bytes.
+Client filenames are discarded; a random UUID and detected extension form
+the stored filename under `public/uploads`.
+
+```
+201 → { "url": "/uploads/<uuid>.<ext>" }
+400 → missing file, file too large, unsupported type or invalid signature
+401 → no valid session
+```
+
 ---
 
 ## 4. Request flows
@@ -232,7 +267,8 @@ instead of removing the first.
 ```
 GET /  →  Server Component renders the shell immediately
        →  <Suspense> streams the event list
-       →  prisma.event.findMany({ where: { status: PUBLISHED }, orderBy: { date: asc } })
+       →  src/lib/events.ts builds search/timeframe/status predicates and pagination
+       →  prisma.event.findMany({ where, skip, take, orderBy: { date: asc } })
        →  empty result  → EmptyState
        →  query throws  → ErrorState, details logged server-side only
 ```
@@ -308,6 +344,7 @@ without edits leaves the stored value unchanged.
 | `date` | string parseable as a date, transformed to `Date` | `Date must be a valid date` |
 | `location` | trimmed, 3–200 characters | `Location must be at least 3 characters` |
 | `status` | one of the four enum values | `Status must be one of DRAFT, PUBLISHED, CANCELLED, or COMPLETED` |
+| `imageUrl` | optional local path, at most 500 characters | `Image URL must be at most 500 characters` |
 
 `username` is trimmed; `password` is not, because leading or trailing spaces
 can be a deliberate part of a password and trimming them would cause a login
@@ -329,10 +366,14 @@ missing here. Both directions were confirmed by temporarily breaking them.
 | `tests/validation.test.ts` | every rule above, trimming before length checks, missing and wrong-typed fields, `eventUpdateSchema` partial behaviour, login schema |
 | `tests/auth.test.ts` | hashes differ from the plain password and from each other, correct and incorrect verification, sign/verify round trip, tampered token, token signed with a foreign secret, malformed token |
 | `tests/format.test.ts` | display formatting, both conversion directions, round trip, a time that falls on a different day in UTC |
+| `tests/events.test.ts` | query predicates, combined filters, URL preservation and pagination boundaries |
+| `tests/rate-limit.test.ts` | sliding-window limit, recovery, reset and client-IP selection |
+| `tests/uploads.test.ts` | JPEG/PNG/WebP signature detection, spoof rejection and image URL validation |
 
 `vitest.config.mts` injects its own `JWT_SECRET` so the suite does not
 depend on a `.env` file, which CI does not have.
 
-Automated tests do not cover the route handlers or the React components.
-That gap is covered by the manual scenario checklist, which was run against
-a live server, including at a 375 pixel viewport.
+Automated tests do not cover the route handlers or React components. That gap
+is covered by the manual regression and Phase 2 scenario checklists against a
+live production server, including at a 375 pixel viewport. The security review
+and evidence are recorded in [SECURITY.md](./SECURITY.md).

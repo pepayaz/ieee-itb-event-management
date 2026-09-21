@@ -94,6 +94,25 @@ utilities in `@layer utilities`. On an OS in dark mode the pages rendered
 dark text on a dark background. This application implements a single light
 theme, so the half-finished dark mode was deleted rather than completed.
 
+### Event access moved behind a service layer
+
+*Initially built:* Prisma calls directly in pages and route handlers.
+*Current design:* `src/lib/events.ts` owns query construction, pagination and
+event persistence operations.
+
+Search, timeframe filters, status filters and pagination must behave the same
+in the public page, dashboard and API. Centralising those rules avoids subtly
+different Prisma predicates while keeping the API and Server Component paths
+described in the architecture.
+
+### Upload acceptance is based on file signatures
+
+Browser filenames and `Content-Type` values are supplied by the client and can
+be forged. The upload endpoint may reject an explicitly unsupported MIME type
+early, but it accepts a file only after `src/lib/uploads.ts` recognises JPEG,
+PNG or WebP magic bytes. Stored names are random UUIDs, so client paths never
+reach filesystem operations.
+
 ---
 
 ## 3. Trade-offs accepted knowingly
@@ -140,6 +159,23 @@ query for a recovery path nobody asked for.
 being a password-reset mechanism is a free consequence, and the script is
 plainly named.
 
+**The login rate limiter is process-local.** A sliding window in memory keeps
+the implementation inspectable and sufficient for the documented single
+instance. Counters disappear on restart and are not shared between instances;
+a distributed deployment should use a shared store such as Redis.
+
+**Uploaded images use local persistent storage.** `public/uploads` avoids an
+external account and keeps local setup self-contained. It assumes one process
+with a writable, persistent filesystem; ephemeral or multi-instance hosting
+requires object storage. Replaced or deleted images are intentionally not
+removed because ownership is not tracked, so automatic deletion could remove
+a file still referenced elsewhere.
+
+**The visual identity uses a text wordmark and simple monogram.** No official
+logo asset with a documented licence was supplied in the repository. The UI
+therefore uses IEEE colours and organisation text without copying an
+unverified external asset.
+
 **The enum is written down twice.** `EVENT_STATUSES` in
 `src/lib/validation.ts` duplicates the Prisma enum, because importing
 `@prisma/client` into a module used by browser code breaks the client
@@ -152,10 +188,7 @@ error rather than a runtime surprise.
 
 Deliberately not built, because the requirements do not ask for it:
 
-- Search, filtering by upcoming or past, pagination
-- Image uploads
-- Multiple admins, registration, password reset, refresh tokens, rate
-  limiting on login
+- Multiple admins, registration, password reset and refresh tokens
 - Soft delete, audit logging, per-event authorship
 - Deployment to a hosting provider
 - Internationalisation; the interface is English throughout
@@ -176,4 +209,6 @@ listed under "Known issues and limitations" in the README.
 | `bcryptjs` | `bcrypt` | Pure JavaScript, so installation needs no native build toolchain |
 | Prisma 7 pinned | Prisma 8 | Version 8 was still a release candidate and changes the configuration format |
 | Native `<dialog>` for delete confirmation | `window.confirm` | The browser dialog cannot be styled, looks inconsistent across browsers, and cannot show the event title. `showModal()` provides the backdrop and focus trap without custom code |
+| Local `public/uploads` storage | external object storage | No external service or credential is required for the local-first assignment; the deployment limitation is documented |
+| In-memory sliding-window rate limit | Redis-backed limiter | The documented environment is a single process, and a shared service would add operational setup disproportionate to the scope |
 | `npm audit fix --force` not run | running it | It downgrades Prisma to version 6 and breaks the configuration. The advisories are in development-only transitive dependencies; see the README |
