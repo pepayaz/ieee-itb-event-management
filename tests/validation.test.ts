@@ -43,6 +43,32 @@ describe("eventSchema", () => {
     );
   });
 
+  it("rejects loose date strings and invalid ISO dates", () => {
+    expect(firstMessage({ ...validEvent, date: "42" })).toBe(
+      "Date must be a valid date",
+    );
+    expect(firstMessage({ ...validEvent, date: "tomorrow" })).toBe(
+      "Date must be a valid date",
+    );
+    expect(firstMessage({ ...validEvent, date: "2026-13-45T00:00:00Z" })).toBe(
+      "Date must be a valid date",
+    );
+  });
+
+  it("accepts datetime-local format and ISO format with offset", () => {
+    const localResult = eventSchema.safeParse({
+      ...validEvent,
+      date: "2026-10-05T16:00",
+    });
+    expect(localResult.success).toBe(true);
+
+    const offsetResult = eventSchema.safeParse({
+      ...validEvent,
+      date: "2026-10-05T16:00:00+07:00",
+    });
+    expect(offsetResult.success).toBe(true);
+  });
+
   it("rejects a status outside the enum", () => {
     expect(firstMessage({ ...validEvent, status: "ARCHIVED" })).toBe(
       "Status must be one of DRAFT, PUBLISHED, CANCELLED, or COMPLETED",

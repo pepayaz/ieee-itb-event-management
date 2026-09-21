@@ -16,6 +16,11 @@ const _prismaStatusesMatch: (typeof EVENT_STATUSES)[number] = "" as EventStatus;
 void _statusesMatchPrisma;
 void _prismaStatusesMatch;
 
+// Date.parse menerima string longgar seperti '42' (dibaca tahun 2042).
+// Pemeriksaan pola ISO memastikan format string sesuai sebelum diperiksa kalendernya.
+const ISO_8601_DATETIME_PATTERN =
+  /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z|[+-](?:[01]\d|2[0-3]):?[0-5]\d)?$/;
+
 export const eventSchema = z.object({
   title: z
     .string({ error: "Title is required" })
@@ -30,7 +35,12 @@ export const eventSchema = z.object({
   date: z
     .string({ error: "Date is required" })
     .trim()
-    .refine((value) => !Number.isNaN(Date.parse(value)), "Date must be a valid date")
+    .refine(
+      (value) =>
+        ISO_8601_DATETIME_PATTERN.test(value) &&
+        !Number.isNaN(Date.parse(value)),
+      "Date must be a valid date",
+    )
     .transform((value) => new Date(value)),
   location: z
     .string({ error: "Location is required" })
