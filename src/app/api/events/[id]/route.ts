@@ -2,7 +2,11 @@ import { Prisma } from "@prisma/client";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { errorResponse, zodErrorResponse } from "@/lib/api";
-import { prisma } from "@/lib/prisma";
+import {
+  deleteEvent,
+  getEventById,
+  updateEvent,
+} from "@/lib/events";
 import { eventUpdateSchema } from "@/lib/validation";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -18,7 +22,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
   const { id } = await params;
 
   try {
-    const event = await prisma.event.findUnique({ where: { id } });
+    const event = await getEventById(id);
 
     if (!event) {
       return errorResponse("Event not found", 404);
@@ -50,10 +54,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext) {
   }
 
   try {
-    const event = await prisma.event.update({
-      where: { id },
-      data: parsed.data,
-    });
+    const event = await updateEvent(id, parsed.data);
 
     return NextResponse.json(event);
   } catch (error) {
@@ -71,7 +72,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteContext) {
   const { id } = await params;
 
   try {
-    await prisma.event.delete({ where: { id } });
+    await deleteEvent(id);
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

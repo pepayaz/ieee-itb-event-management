@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { getEventById } from "@/lib/events";
 import { formatEventDate } from "@/lib/format";
-import { prisma } from "@/lib/prisma";
 
 export default async function EventDetailPage({
   params,
@@ -10,7 +10,7 @@ export default async function EventDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const event = await prisma.event.findUnique({ where: { id } });
+  const event = await getEventById(id);
 
   // Event DRAFT diperlakukan seolah tidak ada, supaya tidak dapat dibuka
   // lewat URL langsung meskipun id-nya diketahui.
