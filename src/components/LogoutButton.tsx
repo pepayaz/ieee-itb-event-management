@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { apiFetch } from "@/lib/api-client";
+
 export function LogoutButton() {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
@@ -11,7 +13,7 @@ export function LogoutButton() {
     setIsPending(true);
 
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await apiFetch("/api/auth/logout", { method: "POST" });
     } finally {
       router.push("/admin/login");
       // Cache router masih menyimpan halaman yang dirender saat sesi aktif.

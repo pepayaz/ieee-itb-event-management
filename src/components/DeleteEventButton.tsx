@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { apiFetch } from "@/lib/api-client";
+
 type DeleteEventButtonProps = {
   eventId: string;
   eventTitle: string;
@@ -37,21 +39,17 @@ export function DeleteEventButton({
     setIsPending(true);
 
     try {
-      const response = await fetch(`/api/events/${eventId}`, {
+      const result = await apiFetch(`/api/events/${eventId}`, {
         method: "DELETE",
       });
 
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-
-        setError(body?.error?.message ?? "Could not delete the event.");
+      if (!result.ok) {
+        setError(result.error.message);
         return;
       }
 
       setIsOpen(false);
       router.refresh();
-    } catch {
-      setError("Could not reach the server. Check your connection.");
     } finally {
       setIsPending(false);
     }

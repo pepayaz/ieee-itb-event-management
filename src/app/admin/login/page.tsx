@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { apiFetch } from "@/lib/api-client";
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -16,16 +18,14 @@ export default function AdminLoginPage() {
     setIsPending(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const result = await apiFetch<{ username: string }>("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-
-        setError(body?.error?.message ?? "Could not sign in. Please try again.");
+      if (!result.ok) {
+        setError(result.error.message);
         return;
       }
 
@@ -33,8 +33,6 @@ export default function AdminLoginPage() {
       // Dashboard adalah Server Component; tanpa refresh, router dapat
       // menyajikan versi yang dirender sebelum cookie sesi ada.
       router.refresh();
-    } catch {
-      setError("Could not reach the server. Check your connection.");
     } finally {
       setIsPending(false);
     }

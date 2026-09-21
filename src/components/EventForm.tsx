@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 
+import { apiFetch } from "@/lib/api-client";
 import { fromDateTimeLocalValue } from "@/lib/format";
 import { EVENT_STATUSES, eventSchema } from "@/lib/validation";
 
@@ -74,7 +75,7 @@ export function EventForm({ mode, initialData, eventId }: EventFormProps) {
     setIsPending(true);
 
     try {
-      const response = await fetch(
+      const result = await apiFetch(
         mode === "create" ? "/api/events" : `/api/events/${eventId}`,
         {
           method: mode === "create" ? "POST" : "PUT",
@@ -83,15 +84,11 @@ export function EventForm({ mode, initialData, eventId }: EventFormProps) {
         },
       );
 
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        const message = body?.error?.message ?? "Could not save the event.";
-        const field = body?.error?.field;
-
-        if (field) {
-          setFieldErrors({ [field]: message });
+      if (!result.ok) {
+        if (result.error.field) {
+          setFieldErrors({ [result.error.field]: result.error.message });
         } else {
-          setFormError(message);
+          setFormError(result.error.message);
         }
 
         return;
@@ -99,8 +96,6 @@ export function EventForm({ mode, initialData, eventId }: EventFormProps) {
 
       router.push("/admin/dashboard");
       router.refresh();
-    } catch {
-      setFormError("Could not reach the server. Check your connection.");
     } finally {
       setIsPending(false);
     }
