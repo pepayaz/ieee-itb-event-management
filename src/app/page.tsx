@@ -8,6 +8,7 @@ import {
   TimeframeTabs,
 } from "@/components/EventFilters";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
+import { PageHeader, buttonStyles } from "@/components/ui";
 import { listPublishedEvents, type EventTimeframe } from "@/lib/events";
 
 // Tanpa ini Next.js mem-prerender halaman saat build, sehingga event yang
@@ -36,25 +37,24 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const page = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">
-            IEEE ITB Student Branch Events
-          </h1>
-          <p className="text-sm text-gray-600">
-            Upcoming and past events, open to everyone.
-          </p>
+    <main className="min-h-screen">
+      <section className="border-b border-sky-100 bg-gradient-to-br from-white via-ieee-light to-sky-100">
+        <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+          <PageHeader
+            eyebrow="IEEE ITB Student Branch"
+            title="Ideas, skills, and people in motion."
+            description="Discover technical workshops, professional programs, and community events from IEEE ITB Student Branch."
+            actions={
+              <Link href="/admin/login" className={buttonStyles({ variant: "secondary" })}>
+                Admin login
+              </Link>
+            }
+          />
         </div>
-        <Link
-          href="/admin/login"
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
-        >
-          Admin login
-        </Link>
-      </header>
+      </section>
 
-      <section className="mb-6 flex flex-col gap-3">
+      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+      <section aria-label="Event filters" className="mb-8 flex flex-col gap-4 rounded-card border border-gray-200 bg-white p-4 shadow-card sm:p-5">
         <EventSearchBar
           basePath="/"
           search={search}
@@ -73,6 +73,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <Suspense fallback={<LoadingState message="Loading events..." />}>
         <PublishedEventList search={search} timeframe={timeframe} page={page} />
       </Suspense>
+      </div>
     </main>
   );
 }
@@ -119,7 +120,7 @@ async function PublishedEventList({
 
   return (
     <div>
-      <ul className="flex flex-col gap-3">
+      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {result.events.map((event) => (
           <li key={event.id}>
             <EventCard event={event} />

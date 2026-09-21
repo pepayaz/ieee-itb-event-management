@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Badge, Card, PageHeader, buttonStyles } from "@/components/ui";
 import { getEventById } from "@/lib/events";
 import { formatEventDate } from "@/lib/format";
 
@@ -20,44 +21,53 @@ export default async function EventDetailPage({
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8">
-      <Link href="/" className="text-sm text-gray-600 hover:underline">
+    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+      <Link href="/" className={buttonStyles({ variant: "ghost", size: "sm", className: "-ml-3" })}>
         &larr; Back to all events
       </Link>
 
-      <h1 className="mt-4 text-2xl font-semibold text-gray-900">
-        {event.title}
-      </h1>
+      <div className="mt-6">
+        <PageHeader
+          eyebrow="IEEE ITB Student Branch event"
+          title={event.title}
+          description={`${formatEventDate(event.date)} · ${event.location}`}
+          actions={<Badge status={event.status} />}
+        />
+      </div>
 
       {event.imageUrl ? (
-        <Image
-          src={event.imageUrl}
-          alt={`Poster for ${event.title}`}
-          width={768}
-          height={432}
-          priority
-          className="mt-4 w-full rounded border border-gray-200 object-cover"
-        />
+        <Card className="mt-8 overflow-hidden">
+          <Image
+            src={event.imageUrl}
+            alt={`Poster for ${event.title}`}
+            width={1200}
+            height={675}
+            priority
+            className="max-h-[32rem] w-full object-cover"
+          />
+        </Card>
       ) : null}
 
-      <dl className="mt-4 flex flex-col gap-1 text-sm text-gray-700">
-        <div className="flex gap-2">
-          <dt className="font-medium">Date</dt>
-          <dd>{formatEventDate(event.date)}</dd>
-        </div>
-        <div className="flex gap-2">
-          <dt className="font-medium">Location</dt>
-          <dd>{event.location}</dd>
-        </div>
-        <div className="flex gap-2">
-          <dt className="font-medium">Status</dt>
-          <dd>{event.status}</dd>
-        </div>
-      </dl>
-
-      <p className="mt-6 whitespace-pre-line text-gray-800">
-        {event.description}
-      </p>
+      <div className="mt-8 grid gap-6 md:grid-cols-[15rem_1fr]">
+        <Card className="h-fit p-5">
+          <dl className="space-y-4 text-sm">
+            <div>
+              <dt className="font-semibold text-gray-500">Date and time</dt>
+              <dd className="mt-1 font-medium text-gray-900">{formatEventDate(event.date)}</dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-gray-500">Location</dt>
+              <dd className="mt-1 font-medium text-gray-900">{event.location}</dd>
+            </div>
+          </dl>
+        </Card>
+        <article>
+          <h2 className="text-xl font-bold text-gray-950">About this event</h2>
+          <p className="mt-3 whitespace-pre-line text-base leading-8 text-gray-700">
+            {event.description}
+          </p>
+        </article>
+      </div>
     </main>
   );
 }

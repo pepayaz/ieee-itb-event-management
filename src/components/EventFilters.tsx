@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Button, Input, buttonStyles } from "@/components/ui";
 import type { EventTimeframe } from "@/lib/events";
 import { EVENT_STATUSES } from "@/lib/validation";
 
@@ -56,7 +57,7 @@ export function EventSearchBar({
   );
 
   return (
-    <form method="GET" action={basePath} className="flex flex-wrap items-center gap-2">
+    <form method="GET" action={basePath} className="flex flex-col gap-2 sm:flex-row sm:items-center">
       {timeframe && timeframe !== "all" ? (
         <input type="hidden" name="timeframe" value={timeframe} />
       ) : null}
@@ -64,28 +65,26 @@ export function EventSearchBar({
         <input type="hidden" name="status" value={status} />
       ) : null}
 
-      <div className="relative flex flex-1 min-w-[14rem]">
-        <input
+      <div className="relative flex min-w-0 flex-1">
+        <Input
+          aria-label="Search events"
           name="search"
           type="text"
           defaultValue={search ?? ""}
           placeholder="Search by title or description..."
           maxLength={100}
-          className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm placeholder:text-gray-400 focus:border-gray-500 focus:outline-none"
+          className="pr-10"
         />
       </div>
 
-      <button
-        type="submit"
-        className="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
-      >
+      <Button type="submit">
         Search
-      </button>
+      </Button>
 
       {search ? (
         <Link
           href={clearUrl}
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className={buttonStyles({ variant: "secondary" })}
         >
           Clear
         </Link>
@@ -112,7 +111,7 @@ export function TimeframeTabs({
   ];
 
   return (
-    <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filter events by date">
+    <nav className="flex flex-wrap gap-2" aria-label="Filter events by date">
       {options.map((opt) => {
         const isActive = (selected ?? "all") === opt.value;
         const href = buildFilterUrl(
@@ -125,19 +124,18 @@ export function TimeframeTabs({
           <Link
             key={opt.value}
             href={href}
-            role="tab"
-            aria-selected={isActive}
-            className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
+            aria-current={isActive ? "page" : undefined}
+            className={`rounded-full px-3.5 py-2 text-sm font-semibold transition-colors duration-150 ${
               isActive
-                ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-ieee text-white"
+                : "bg-white text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-ieee-light hover:text-ieee-dark"
             }`}
           >
             {opt.label}
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }
 
@@ -155,7 +153,7 @@ export function StatusFilterTabs({
   const options = ["ALL", ...EVENT_STATUSES];
 
   return (
-    <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filter events by status">
+    <nav className="flex flex-wrap gap-2" aria-label="Filter events by status">
       {options.map((opt) => {
         const isActive = (selected ?? "ALL") === opt;
         const href = buildFilterUrl(
@@ -168,19 +166,18 @@ export function StatusFilterTabs({
           <Link
             key={opt}
             href={href}
-            role="tab"
-            aria-selected={isActive}
-            className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+            aria-current={isActive ? "page" : undefined}
+            className={`rounded-full px-3 py-2 text-xs font-bold transition-colors duration-150 ${
               isActive
-                ? "bg-gray-800 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-gray-900 text-white"
+                : "bg-white text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100"
             }`}
           >
             {opt === "ALL" ? "All statuses" : opt}
           </Link>
         );
       })}
-    </div>
+    </nav>
   );
 }
 
@@ -226,7 +223,7 @@ export function PaginationControls({
   return (
     <nav
       aria-label="Pagination"
-      className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-4 text-sm"
+      className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-gray-200 pt-5 text-sm sm:flex-row sm:items-center"
     >
       <div className="text-gray-600">
         Showing <span className="font-medium text-gray-900">{start}</span>–
@@ -240,12 +237,12 @@ export function PaginationControls({
         {hasPrev ? (
           <Link
             href={prevUrl}
-            className="rounded border border-gray-300 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50"
+            className={buttonStyles({ variant: "secondary", size: "sm" })}
           >
             &larr; Previous
           </Link>
         ) : (
-          <span className="cursor-not-allowed rounded border border-gray-200 px-3 py-1.5 font-medium text-gray-400">
+          <span aria-disabled="true" className="inline-flex min-h-9 cursor-not-allowed items-center rounded-control border border-gray-200 px-3 py-1.5 font-semibold text-gray-400">
             &larr; Previous
           </span>
         )}
@@ -253,12 +250,12 @@ export function PaginationControls({
         {hasNext ? (
           <Link
             href={nextUrl}
-            className="rounded border border-gray-300 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50"
+            className={buttonStyles({ variant: "secondary", size: "sm" })}
           >
             Next &rarr;
           </Link>
         ) : (
-          <span className="cursor-not-allowed rounded border border-gray-200 px-3 py-1.5 font-medium text-gray-400">
+          <span aria-disabled="true" className="inline-flex min-h-9 cursor-not-allowed items-center rounded-control border border-gray-200 px-3 py-1.5 font-semibold text-gray-400">
             Next &rarr;
           </span>
         )}

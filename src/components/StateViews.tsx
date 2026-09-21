@@ -1,14 +1,16 @@
 "use client";
 
+import { Button, Card } from "@/components/ui";
+
 type StateProps = {
   message?: string;
 };
 
 function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded border border-gray-200 bg-white px-6 py-12 text-center">
+    <Card className="flex flex-col items-center gap-4 px-6 py-16 text-center">
       {children}
-    </div>
+    </Card>
   );
 }
 
@@ -16,11 +18,11 @@ export function LoadingState({ message = "Loading..." }: StateProps) {
   return (
     <Panel>
       <div
-        className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700"
+        className="h-8 w-8 animate-spin rounded-full border-2 border-sky-100 border-t-ieee"
         role="status"
         aria-label={message}
       />
-      <p className="text-sm text-gray-600">{message}</p>
+      <p className="text-sm font-medium text-gray-600">{message}</p>
     </Panel>
   );
 }
@@ -28,7 +30,8 @@ export function LoadingState({ message = "Loading..." }: StateProps) {
 export function EmptyState({ message = "Nothing here yet." }: StateProps) {
   return (
     <Panel>
-      <p className="text-sm text-gray-600">{message}</p>
+      <div aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full bg-ieee-light text-xl text-ieee">—</div>
+      <p className="max-w-md text-sm leading-6 text-gray-600">{message}</p>
     </Panel>
   );
 }
@@ -39,15 +42,17 @@ export function ErrorState({
 }: StateProps & { onRetry?: () => void }) {
   return (
     <Panel>
-      <p className="text-sm text-red-700">{message}</p>
+      <div aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full bg-danger-soft text-xl font-bold text-danger">!</div>
+      <p className="max-w-md text-sm leading-6 text-danger">{message}</p>
       {onRetry ? (
-        <button
+        <Button
           type="button"
           onClick={onRetry}
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+          variant="secondary"
+          size="sm"
         >
           Try again
-        </button>
+        </Button>
       ) : null}
     </Panel>
   );
