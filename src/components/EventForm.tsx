@@ -5,6 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import {
+  Button,
+  FormField,
+  Input,
+  Select,
+  Textarea,
+  buttonStyles,
+} from "@/components/ui";
 import { apiFetch } from "@/lib/api-client";
 import { MAX_UPLOAD_FILE_SIZE } from "@/lib/uploads";
 import { fromDateTimeLocalValue } from "@/lib/format";
@@ -147,49 +155,59 @@ export function EventForm({ mode, initialData, eventId }: EventFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-      <Field label="Title" error={fieldErrors.title}>
-        <input
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+      <FormField id="title" label="Title" error={fieldErrors.title}>
+        <Input
+          id="title"
           name="title"
           value={values.title}
           onChange={(event) => update("title", event.target.value)}
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          aria-invalid={Boolean(fieldErrors.title)}
+          aria-describedby={fieldErrors.title ? "title-error" : undefined}
         />
-      </Field>
+      </FormField>
 
-      <Field label="Description" error={fieldErrors.description}>
-        <textarea
+      <FormField id="description" label="Description" error={fieldErrors.description}>
+        <Textarea
+          id="description"
           name="description"
-          rows={5}
+          rows={7}
           value={values.description}
           onChange={(event) => update("description", event.target.value)}
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          aria-invalid={Boolean(fieldErrors.description)}
+          aria-describedby={fieldErrors.description ? "description-error" : undefined}
         />
-      </Field>
+      </FormField>
 
-      <Field label="Date and time (WIB)" error={fieldErrors.date}>
-        <input
+      <div className="grid gap-6 sm:grid-cols-2">
+      <FormField id="date" label="Date and time (WIB)" error={fieldErrors.date}>
+        <Input
+          id="date"
           name="date"
           type="datetime-local"
           value={values.date}
           onChange={(event) => update("date", event.target.value)}
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          aria-invalid={Boolean(fieldErrors.date)}
+          aria-describedby={fieldErrors.date ? "date-error" : undefined}
         />
-      </Field>
+      </FormField>
 
-      <Field label="Location" error={fieldErrors.location}>
-        <input
+      <FormField id="location" label="Location" error={fieldErrors.location}>
+        <Input
+          id="location"
           name="location"
           value={values.location}
           onChange={(event) => update("location", event.target.value)}
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          aria-invalid={Boolean(fieldErrors.location)}
+          aria-describedby={fieldErrors.location ? "location-error" : undefined}
         />
-      </Field>
+      </FormField>
+      </div>
 
-      <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-gray-800">
+      <div className="flex flex-col gap-2 rounded-card border border-dashed border-gray-300 bg-gray-50 p-4">
+        <label htmlFor="image" className="text-sm font-semibold text-gray-800">
           Image <span className="font-normal text-gray-500">(optional)</span>
-        </span>
+        </label>
 
         {values.imageUrl ? (
           <div className="flex items-start gap-3">
@@ -198,26 +216,28 @@ export function EventForm({ mode, initialData, eventId }: EventFormProps) {
               alt="Selected event image"
               width={160}
               height={120}
-              className="h-24 w-32 rounded border border-gray-200 object-cover"
+              className="h-28 w-40 rounded-control border border-gray-200 object-cover shadow-sm"
             />
-            <button
+            <Button
               type="button"
               onClick={() => update("imageUrl", null)}
               disabled={isUploading}
-              className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
+              variant="secondary"
+              size="sm"
             >
               Remove image
-            </button>
+            </Button>
           </div>
         ) : null}
 
-        <input
+        <Input
+          id="image"
           type="file"
           name="image"
           accept="image/jpeg,image/png,image/webp"
           onChange={handleFileChange}
           disabled={isUploading}
-          className="text-sm file:mr-3 file:rounded file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-gray-50"
+          className="file:mr-3 file:rounded-control file:border-0 file:bg-ieee-light file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-ieee-dark hover:file:bg-sky-100"
         />
 
         <span className="text-xs text-gray-500">
@@ -227,72 +247,55 @@ export function EventForm({ mode, initialData, eventId }: EventFormProps) {
         </span>
 
         {uploadError ? (
-          <span role="alert" className="text-sm text-red-700">
+          <span role="alert" className="text-sm text-danger">
             {uploadError}
           </span>
         ) : null}
       </div>
 
-      <Field label="Status" error={fieldErrors.status}>
-        <select
+      <FormField id="status" label="Status" error={fieldErrors.status}>
+        <Select
+          id="status"
           name="status"
           value={values.status}
           onChange={(event) =>
             update("status", event.target.value as EventFormValues["status"])
           }
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          aria-invalid={Boolean(fieldErrors.status)}
+          aria-describedby={fieldErrors.status ? "status-error" : undefined}
         >
           {EVENT_STATUSES.map((status) => (
             <option key={status} value={status}>
               {status}
             </option>
           ))}
-        </select>
-      </Field>
+        </Select>
+      </FormField>
 
       {formError ? (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="rounded-control bg-danger-soft px-3 py-2 text-sm text-danger">
           {formError}
         </p>
       ) : null}
 
-      <div className="flex items-center gap-2">
-        <button
+      <div className="flex flex-col-reverse gap-2 border-t border-gray-200 pt-5 sm:flex-row sm:items-center sm:justify-end">
+        <Link
+          href="/admin/dashboard"
+          className={buttonStyles({ variant: "secondary" })}
+        >
+          Cancel
+        </Link>
+        <Button
           type="submit"
           disabled={isPending || isUploading}
-          className="rounded bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
         >
           {isPending
             ? "Saving..."
             : mode === "create"
               ? "Create event"
               : "Save changes"}
-        </button>
-        <Link
-          href="/admin/dashboard"
-          className="rounded border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
-        >
-          Cancel
-        </Link>
+        </Button>
       </div>
     </form>
-  );
-}
-
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-sm font-medium text-gray-800">{label}</span>
-      {children}
-      {error ? <span className="text-sm text-red-700">{error}</span> : null}
-    </label>
   );
 }

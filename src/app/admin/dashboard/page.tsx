@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { EventStatus } from "@prisma/client";
+import { cookies } from "next/headers";
 
 import { DeleteEventButton } from "@/components/DeleteEventButton";
 import {
@@ -10,6 +11,8 @@ import {
 } from "@/components/EventFilters";
 import { LogoutButton } from "@/components/LogoutButton";
 import { EmptyState, ErrorState } from "@/components/StateViews";
+import { Badge, Card, PageHeader, buttonStyles } from "@/components/ui";
+import { SESSION_COOKIE, verifyToken } from "@/lib/auth";
 import { listAllEvents, type EventTimeframe } from "@/lib/events";
 import { formatEventDate } from "@/lib/format";
 import { EVENT_STATUSES } from "@/lib/validation";
@@ -26,6 +29,9 @@ export default async function AdminDashboardPage({
   searchParams,
 }: AdminDashboardProps) {
   const params = await searchParams;
+  const sessionToken = (await cookies()).get(SESSION_COOKIE)?.value;
+  const session = sessionToken ? await verifyToken(sessionToken) : null;
+  const username = session?.username ?? "Administrator";
   const search =
     typeof params.search === "string" ? params.search.trim() : undefined;
   const timeframeParam =
@@ -64,7 +70,7 @@ export default async function AdminDashboardPage({
     console.error("Failed to load events for the dashboard:", error);
 
     return (
-      <Shell>
+      <Shell username={username}>
         <ErrorState message="We could not load the events. Please try again later." />
       </Shell>
     );
@@ -75,8 +81,8 @@ export default async function AdminDashboardPage({
   );
 
   return (
-    <Shell>
-      <section className="mb-6 flex flex-col gap-3">
+    <Shell username={username}>
+      <section aria-label="Event filters" className="mb-8 flex flex-col gap-4 rounded-card border border-gray-200 bg-white p-4 shadow-card sm:p-5">
         <EventSearchBar
           basePath="/admin/dashboard"
           search={search}
@@ -109,38 +115,66 @@ export default async function AdminDashboardPage({
         />
       ) : (
         <div>
-          {/* Tabel tidak dapat dipersempit tanpa merusak keterbacaan, jadi pada
-              layar sempit ia digeser mendatar, bukan dimampatkan. */}
-          <div className="overflow-x-auto rounded border border-gray-200 bg-white">
-            <table className="w-full min-w-[40rem] text-left text-sm">
-              <thead className="border-b border-gray-200 text-gray-600">
+          <div className="grid gap-4 md:hidden">
+            {result.events.map((event) => (
+              <Card key={event.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="font-bold leading-snug text-gray-950">{event.title}</h2>
+                  <Badge status={event.status} />
+                </div>
+                <dl className="mt-4 grid gap-3 text-sm">
+                  <div>
+                    <dt className="font-semibold text-gray-500">Date</dt>
+                    <dd className="mt-0.5 text-gray-800">{formatEventDate(event.date)}</dd>
+                  </div>
+                  <div>
+                    <dt className="font-semibold text-gray-500">Location</dt>
+                    <dd className="mt-0.5 text-gray-800">{event.location}</dd>
+                  </div>
+                </dl>
+                <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-3">
+                  <Link
+                    href={`/admin/events/${event.id}/edit`}
+                    className={buttonStyles({ variant: "secondary", size: "sm" })}
+                  >
+                    Edit
+                  </Link>
+                  <DeleteEventButton eventId={event.id} eventTitle={event.title} />
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <div className="hidden overflow-hidden rounded-card border border-gray-200 bg-white shadow-card md:block">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-gray-200 bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Title</th>
-                  <th className="px-3 py-2 font-medium">Date</th>
-                  <th className="px-3 py-2 font-medium">Location</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium">Actions</th>
+                  <th className="px-4 py-3 font-semibold">Title</th>
+                  <th className="px-4 py-3 font-semibold">Date</th>
+                  <th className="px-4 py-3 font-semibold">Location</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {result.events.map((event) => (
                   <tr
                     key={event.id}
-                    className="border-b border-gray-100 last:border-0"
+                    className="border-b border-gray-100 transition-colors last:border-0 hover:bg-sky-50/60"
                   >
-                    <td className="px-3 py-2 font-medium text-gray-900">
+                    <td className="px-4 py-3 font-semibold text-gray-950">
                       {event.title}
                     </td>
-                    <td className="px-3 py-2 text-gray-700">
+                    <td className="px-4 py-3 text-gray-700">
                       {formatEventDate(event.date)}
                     </td>
-                    <td className="px-3 py-2 text-gray-700">{event.location}</td>
-                    <td className="px-3 py-2 text-gray-700">{event.status}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-3">
+                    <td className="px-4 py-3 text-gray-700">{event.location}</td>
+                    <td className="px-4 py-3"><Badge status={event.status} /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
                         <Link
                           href={`/admin/events/${event.id}/edit`}
-                          className="text-gray-700 underline hover:text-gray-900"
+                          className={buttonStyles({ variant: "ghost", size: "sm" })}
                         >
                           Edit
                         </Link>
@@ -172,32 +206,33 @@ export default async function AdminDashboardPage({
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, username }: { children: React.ReactNode; username: string }) {
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Event dashboard</h1>
-          <p className="text-sm text-gray-600">
-            All events, including drafts, newest first.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mb-8">
+        <PageHeader
+          eyebrow={`Signed in as ${username}`}
+          title="Event dashboard"
+          description="Create, publish, and maintain IEEE ITB Student Branch events."
+          actions={
+            <>
           <Link
             href="/"
-            className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+            className={buttonStyles({ variant: "secondary", size: "sm" })}
           >
             View public site
           </Link>
           <Link
             href="/admin/events/new"
-            className="rounded bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
+            className={buttonStyles({ size: "sm" })}
           >
             New event
           </Link>
           <LogoutButton />
-        </div>
-      </header>
+            </>
+          }
+        />
+      </div>
       {children}
     </main>
   );

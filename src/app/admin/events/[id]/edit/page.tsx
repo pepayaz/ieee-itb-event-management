@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EventForm } from "@/components/EventForm";
+import { Card, PageHeader, buttonStyles } from "@/components/ui";
 import { getEventById } from "@/lib/events";
 import { toDateTimeLocalValue } from "@/lib/format";
 
@@ -18,16 +19,17 @@ export default async function EditEventPage({
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <Link
         href="/admin/dashboard"
-        className="text-sm text-gray-600 hover:underline"
+        className={buttonStyles({ variant: "ghost", size: "sm", className: "-ml-3" })}
       >
         &larr; Back to dashboard
       </Link>
-      <h1 className="mt-4 mb-6 text-xl font-semibold text-gray-900">
-        Edit event
-      </h1>
+      <div className="mt-6">
+        <PageHeader title="Edit event" description="Update event details, publication status, or the event image." />
+      </div>
+      <Card className="mt-8 p-5 sm:p-8">
       <EventForm
         mode="edit"
         eventId={event.id}
@@ -42,6 +44,7 @@ export default async function EditEventPage({
           imageUrl: event.imageUrl,
         }}
       />
+      </Card>
     </main>
   );
 }

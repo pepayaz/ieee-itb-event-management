@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Button, Card, FormField, Input } from "@/components/ui";
 import { apiFetch } from "@/lib/api-client";
 
 export default function AdminLoginPage() {
@@ -39,50 +40,53 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-sm px-4 py-12">
-      <h1 className="text-xl font-semibold text-gray-900">Admin sign in</h1>
-      <p className="mt-1 text-sm text-gray-600">
-        Sign in to manage IEEE ITB Student Branch events.
-      </p>
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-ieee-light via-white to-gray-100 px-4 py-12">
+      <Card className="w-full max-w-md p-6 sm:p-8">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-ieee">
+          IEEE ITB Student Branch
+        </p>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-gray-950">Admin sign in</h1>
+        <p className="mt-2 text-sm leading-6 text-gray-600">
+          Use your administrator account to manage events.
+        </p>
 
-      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-800">Username</span>
-          <input
+      <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-5" noValidate>
+        <FormField id="username" label="Username">
+          <Input
+            id="username"
             name="username"
             value={username}
             onChange={(event) => setUsername(event.target.value)}
             autoComplete="username"
-            className="rounded border border-gray-300 px-3 py-2 text-sm"
           />
-        </label>
+        </FormField>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-gray-800">Password</span>
-          <input
+        <FormField id="password" label="Password">
+          <Input
+            id="password"
             name="password"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
-            className="rounded border border-gray-300 px-3 py-2 text-sm"
           />
-        </label>
+        </FormField>
 
         {error ? (
-          <p role="alert" className="text-sm text-red-700">
+          <p role="alert" className="rounded-control bg-danger-soft px-3 py-2 text-sm text-danger">
             {error}
           </p>
         ) : null}
 
-        <button
+        <Button
           type="submit"
           disabled={isPending}
-          className="rounded bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
+          className="w-full"
         >
           {isPending ? "Signing in..." : "Sign in"}
-        </button>
+        </Button>
       </form>
+      </Card>
     </main>
   );
 }

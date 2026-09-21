@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui";
 import { apiFetch } from "@/lib/api-client";
 
 type DeleteEventButtonProps = {
@@ -57,23 +58,26 @@ export function DeleteEventButton({
 
   return (
     <>
-      <button
+      <Button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="text-red-700 underline hover:text-red-800"
+        variant="ghost"
+        size="sm"
+        className="text-danger hover:bg-danger-soft"
       >
         Delete
-      </button>
+      </Button>
 
       <dialog
         ref={dialogRef}
         // Tombol Escape menutup dialog tanpa melewati tombol Cancel, jadi
         // state ikut disinkronkan di sini.
         onClose={() => setIsOpen(false)}
-        className="m-auto rounded border border-gray-300 p-0 backdrop:bg-black/40"
+        className="m-auto w-[calc(100vw-2rem)] max-w-[26rem] overflow-hidden rounded-card border border-gray-200 bg-white p-0 shadow-floating backdrop:bg-gray-950/50"
       >
-        <div className="flex w-[min(90vw,24rem)] flex-col gap-3 p-4">
-          <h2 className="text-base font-semibold text-gray-900">
+        <div className="flex w-full flex-col gap-4 p-6">
+          <div aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full bg-danger-soft text-lg font-bold text-danger">!</div>
+          <h2 className="text-xl font-bold text-gray-950">
             Delete this event?
           </h2>
           <p className="text-sm text-gray-700">
@@ -82,28 +86,30 @@ export function DeleteEventButton({
           </p>
 
           {error ? (
-            <p role="alert" className="text-sm text-red-700">
+            <p role="alert" className="rounded-control bg-danger-soft px-3 py-2 text-sm text-danger">
               {error}
             </p>
           ) : null}
 
-          <div className="flex justify-end gap-2">
-            <button
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
               type="button"
               onClick={() => setIsOpen(false)}
               disabled={isPending}
-              className="rounded border border-gray-300 px-3 py-1.5 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
+              variant="secondary"
+              size="sm"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleDelete}
               disabled={isPending}
-              className="rounded bg-red-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60"
+              variant="danger"
+              size="sm"
             >
               {isPending ? "Deleting..." : "Delete"}
-            </button>
+            </Button>
           </div>
         </div>
       </dialog>
