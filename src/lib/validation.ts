@@ -64,6 +64,18 @@ export const loginSchema = z.object({
     .min(1, "Password is required"),
 });
 
+export const eventFilterSchema = z.object({
+  search: z
+    .string()
+    .trim()
+    .max(100, "Search query must be at most 100 characters")
+    .optional(),
+  timeframe: z.enum(["upcoming", "past", "all"]).optional(),
+  status: z.enum(EVENT_STATUSES).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+});
+
 export type EventInput = z.infer<typeof eventSchema>;
 export type EventUpdateInput = z.infer<typeof eventUpdateSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type EventFilterInput = z.infer<typeof eventFilterSchema>;
