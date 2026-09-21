@@ -18,6 +18,14 @@ export async function middleware(request: NextRequest) {
     return errorResponse("Authentication required", 401);
   }
 
+  if (pathname.startsWith("/api/uploads")) {
+    if (!session) {
+      return errorResponse("Authentication required", 401);
+    }
+
+    return NextResponse.next();
+  }
+
   if (pathname === "/admin/login") {
     return session
       ? NextResponse.redirect(new URL("/admin/dashboard", request.url))
@@ -32,5 +40,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/events/:path*"],
+  matcher: ["/admin/:path*", "/api/events/:path*", "/api/uploads/:path*"],
 };

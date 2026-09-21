@@ -50,6 +50,13 @@ export const eventSchema = z.object({
   status: z.enum(EVENT_STATUSES, {
     error: "Status must be one of DRAFT, PUBLISHED, CANCELLED, or COMPLETED",
   }),
+  imageUrl: z
+    .string()
+    .trim()
+    .max(500, "Image URL must be at most 500 characters")
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.length > 0 ? val : null)),
 });
 
 export const eventUpdateSchema = eventSchema.partial();
