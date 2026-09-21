@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -86,6 +87,13 @@ export default function AdminLoginPage() {
           {isPending ? "Signing in..." : "Sign in"}
         </Button>
       </form>
+
+        <Link
+          href="/"
+          className="mt-5 block text-center text-sm font-semibold text-ieee hover:text-ieee-dark"
+        >
+          Back to events
+        </Link>
       </Card>
     </main>
   );

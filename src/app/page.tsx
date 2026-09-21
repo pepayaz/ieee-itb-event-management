@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 
 import { EventCard } from "@/components/EventCard";
@@ -10,7 +9,7 @@ import {
 } from "@/components/EventFilters";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
-import { PageHeader, buttonStyles } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { listPublishedEvents, type EventTimeframe } from "@/lib/events";
 
 // Tanpa ini Next.js mem-prerender halaman saat build, sehingga event yang
@@ -59,11 +58,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             eyebrow="IEEE ITB Student Branch"
             title="Ideas, skills, and people in motion."
             description="Discover technical workshops, professional programs, and community events from IEEE ITB Student Branch."
-            actions={
-              <Link href="/admin/login" className={buttonStyles({ variant: "secondary" })}>
-                Admin login
-              </Link>
-            }
           />
         </div>
       </section>

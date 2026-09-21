@@ -16,7 +16,7 @@ export function LogoutButton() {
     try {
       await apiFetch("/api/auth/logout", { method: "POST" });
     } finally {
-      router.push("/admin/login");
+      router.replace("/");
       // Cache router masih menyimpan halaman yang dirender saat sesi aktif.
       // Tanpa refresh, kembali ke dashboard bisa menampilkan versi lama.
       router.refresh();
