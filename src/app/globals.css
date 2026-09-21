@@ -3,12 +3,44 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-ieee: #00629b;
+  --color-ieee-dark: #004b78;
+  --color-ieee-light: #e7f4fb;
+  --color-success: #177245;
+  --color-success-soft: #e8f5ee;
+  --color-warning: #9a5b00;
+  --color-warning-soft: #fff4d6;
+  --color-danger: #b42318;
+  --color-danger-soft: #feeceb;
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06), 0 8px 24px rgb(15 23 42 / 0.05);
+  --shadow-floating: 0 18px 48px rgb(15 23 42 / 0.18);
 }
 
-/* Warna diatur lewat utility Tailwind di layout, bukan di sini. Aturan body
-   yang tidak berada dalam layer akan menang atas @layer utilities, dan
-   scaffold bawaan memakai itu untuk dark mode yang tidak kita implementasikan
-   sehingga menghasilkan teks gelap di atas latar gelap. */
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: #f8fafc;
+  color: #111827;
+}
+
+::selection {
+  background: #b9def1;
+  color: #003a5d;
+}
+
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 3px solid rgb(0 98 155 / 0.28);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
