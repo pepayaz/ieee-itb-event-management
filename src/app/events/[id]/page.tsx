@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -27,6 +28,17 @@ export default async function EventDetailPage({
       <h1 className="mt-4 text-2xl font-semibold text-gray-900">
         {event.title}
       </h1>
+
+      {event.imageUrl ? (
+        <Image
+          src={event.imageUrl}
+          alt={`Poster for ${event.title}`}
+          width={768}
+          height={432}
+          priority
+          className="mt-4 w-full rounded border border-gray-200 object-cover"
+        />
+      ) : null}
 
       <dl className="mt-4 flex flex-col gap-1 text-sm text-gray-700">
         <div className="flex gap-2">

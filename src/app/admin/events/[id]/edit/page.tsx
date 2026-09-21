@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EventForm } from "@/components/EventForm";
+import { getEventById } from "@/lib/events";
 import { toDateTimeLocalValue } from "@/lib/format";
-import { prisma } from "@/lib/prisma";
 
 export default async function EditEventPage({
   params,
@@ -11,7 +11,7 @@ export default async function EditEventPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const event = await prisma.event.findUnique({ where: { id } });
+  const event = await getEventById(id);
 
   if (!event) {
     notFound();
@@ -39,6 +39,7 @@ export default async function EditEventPage({
           date: toDateTimeLocalValue(event.date),
           location: event.location,
           status: event.status,
+          imageUrl: event.imageUrl,
         }}
       />
     </main>
