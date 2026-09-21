@@ -1,18 +1,51 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
+import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { Badge, Card, PageHeader, buttonStyles } from "@/components/ui";
 import { getEventById } from "@/lib/events";
 import { formatEventDate } from "@/lib/format";
 
+const getEvent = cache(getEventById);
+
+type EventDetailProps = {
+  params: Promise<{ id: string }>;
+};
+
+export async function generateMetadata({
+  params,
+}: EventDetailProps): Promise<Metadata> {
+  const { id } = await params;
+  const event = await getEvent(id);
+
+  if (!event || event.status === "DRAFT") {
+    return { title: "Event not found" };
+  }
+
+  const description =
+    event.description.length > 160
+      ? `${event.description.slice(0, 157)}...`
+      : event.description;
+
+  return {
+    title: event.title,
+    description,
+    openGraph: {
+      type: "article",
+      title: `${event.title} | IEEE ITB Student Branch`,
+      description,
+    },
+  };
+}
+
 export default async function EventDetailPage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+}: EventDetailProps) {
   const { id } = await params;
-  const event = await getEventById(id);
+  const event = await getEvent(id);
 
   // Event DRAFT diperlakukan seolah tidak ada, supaya tidak dapat dibuka
   // lewat URL langsung meskipun id-nya diketahui.
@@ -21,7 +54,9 @@ export default async function EventDetailPage({
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+    <>
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Link href="/" className={buttonStyles({ variant: "ghost", size: "sm", className: "-ml-3" })}>
         &larr; Back to all events
       </Link>
@@ -68,6 +103,8 @@ export default async function EventDetailPage({
           </p>
         </article>
       </div>
-    </main>
+      </main>
+      <SiteFooter />
+    </>
   );
 }

@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { EventForm } from "@/components/EventForm";
 import { Card, PageHeader, buttonStyles } from "@/components/ui";
+
+export const metadata: Metadata = {
+  title: "Create event",
+  description: "Create a new IEEE ITB Student Branch event.",
+};
 
 export default function NewEventPage() {
   return (

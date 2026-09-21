@@ -13,8 +13,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IEEE ITB SB Events",
-  description: "Event management for IEEE ITB Student Branch.",
+  title: {
+    default: "IEEE ITB Student Branch Events",
+    template: "%s | IEEE ITB Student Branch",
+  },
+  description:
+    "Discover technical, professional, and community events from IEEE ITB Student Branch.",
+  applicationName: "IEEE ITB Student Branch Events",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "IEEE ITB Student Branch Events",
+    title: "IEEE ITB Student Branch Events",
+    description:
+      "Discover technical, professional, and community events from IEEE ITB Student Branch.",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

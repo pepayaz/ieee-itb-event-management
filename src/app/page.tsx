@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -8,12 +9,24 @@ import {
   TimeframeTabs,
 } from "@/components/EventFilters";
 import { EmptyState, ErrorState, LoadingState } from "@/components/StateViews";
+import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { PageHeader, buttonStyles } from "@/components/ui";
 import { listPublishedEvents, type EventTimeframe } from "@/lib/events";
 
 // Tanpa ini Next.js mem-prerender halaman saat build, sehingga event yang
 // dibuat admin tidak pernah muncul sampai deploy berikutnya.
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Events | IEEE ITB Student Branch",
+  description:
+    "Explore upcoming and past workshops, seminars, competitions, and community programs from IEEE ITB Student Branch.",
+  openGraph: {
+    title: "Events | IEEE ITB Student Branch",
+    description:
+      "Explore upcoming and past workshops, seminars, competitions, and community programs from IEEE ITB Student Branch.",
+  },
+};
 
 type HomePageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -37,7 +50,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const page = Number.isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
 
   return (
-    <main className="min-h-screen">
+    <>
+      <SiteHeader />
+      <main className="min-h-screen">
       <section className="border-b border-sky-100 bg-gradient-to-br from-white via-ieee-light to-sky-100">
         <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <PageHeader
@@ -53,28 +68,37 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-      <section aria-label="Event filters" className="mb-8 flex flex-col gap-4 rounded-card border border-gray-200 bg-white p-4 shadow-card sm:p-5">
-        <EventSearchBar
-          basePath="/"
-          search={search}
-          timeframe={timeframe}
-        />
-        <TimeframeTabs
-          basePath="/"
-          selected={timeframe}
-          search={search}
-        />
-      </section>
+        <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+          <section
+            aria-label="Event filters"
+            className="mb-8 flex flex-col gap-4 rounded-card border border-gray-200 bg-white p-4 shadow-card sm:p-5"
+          >
+            <EventSearchBar
+              basePath="/"
+              search={search}
+              timeframe={timeframe}
+            />
+            <TimeframeTabs
+              basePath="/"
+              selected={timeframe}
+              search={search}
+            />
+          </section>
 
       {/* Suspense dipakai di sini, bukan loading.tsx: loading.tsx di root
           juga membungkus /events/[id], dan boundary itu membuat response
           ter-stream dengan status 200 sebelum notFound() sempat berjalan. */}
-      <Suspense fallback={<LoadingState message="Loading events..." />}>
-        <PublishedEventList search={search} timeframe={timeframe} page={page} />
-      </Suspense>
-      </div>
-    </main>
+          <Suspense fallback={<LoadingState message="Loading events..." />}>
+            <PublishedEventList
+              search={search}
+              timeframe={timeframe}
+              page={page}
+            />
+          </Suspense>
+        </div>
+      </main>
+      <SiteFooter />
+    </>
   );
 }
 
@@ -112,7 +136,7 @@ async function PublishedEventList({
         message={
           isFiltered
             ? "No published events match your filter. Try adjusting your search."
-            : "No published events yet. Check back soon."
+            : "No events are published yet. Please check back soon."
         }
       />
     );

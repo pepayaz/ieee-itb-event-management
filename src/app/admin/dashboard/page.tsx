@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { EventStatus } from "@prisma/client";
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
 import { DeleteEventButton } from "@/components/DeleteEventButton";
@@ -20,6 +21,11 @@ import { EVENT_STATUSES } from "@/lib/validation";
 // Sama seperti halaman publik: tanpa ini Next.js mem-prerender dashboard
 // saat build, sehingga event yang baru dibuat tidak muncul.
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Event dashboard",
+  description: "Manage IEEE ITB Student Branch events.",
+};
 
 type AdminDashboardProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

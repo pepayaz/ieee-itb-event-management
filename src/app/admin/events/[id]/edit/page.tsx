@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -5,6 +6,11 @@ import { EventForm } from "@/components/EventForm";
 import { Card, PageHeader, buttonStyles } from "@/components/ui";
 import { getEventById } from "@/lib/events";
 import { toDateTimeLocalValue } from "@/lib/format";
+
+export const metadata: Metadata = {
+  title: "Edit event",
+  description: "Update an IEEE ITB Student Branch event.",
+};
 
 export default async function EditEventPage({
   params,
